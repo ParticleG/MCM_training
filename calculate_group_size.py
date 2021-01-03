@@ -1,31 +1,38 @@
 import numpy as np
 
+from decimal import Decimal as Dec
 
-def calculate_group_size(_total_count, _infect_rate, previous_group_size):
-    temp_previous_size = previous_group_size
-    temp_group_size = temp_previous_size
-    recent_expect = 0
-    now_expect = 0
-    while temp_group_size > 0:
-        temp_expect = 1
-        for index in np.arange(temp_group_size):
-            temp_expect *= ((1 - _infect_rate) * _total_count - index) / (_total_count - index)
 
-        old_expect = recent_expect
-        recent_expect = now_expect
-        now_expect = temp_expect * temp_group_size
-        if old_expect < recent_expect and now_expect < recent_expect:
-            positive_expect = (1 - recent_expect / temp_previous_size) * temp_previous_size
-            next_count = positive_expect * (_total_count / temp_previous_size)
-            print(f'When temp_total_count={_total_count}, '
-                  f'temp_infect_rate={_infect_rate}, '
-                  f'group_size={temp_previous_size}: '
-                  f'negative_expect={recent_expect}, '
-                  f'positive_expect={positive_expect}, '
-                  f'next_count={next_count}')
-            return temp_previous_size, recent_expect
-        temp_previous_size = temp_group_size
-        if temp_group_size < 100:
-            temp_group_size -= 1
-        else:
-            temp_group_size -= int(np.round(np.log(_total_count) / np.log(6)))
+def _calculate_expectation(_total_count, _infect_rate, _group_size):
+    _successive_multiplication = Dec(1)
+    for _iterator in np.arange(0, int(_group_size) + 1):
+        _successive_multiplication *= ((Dec(1) - _infect_rate) * _total_count - Dec(int(_iterator))) / (
+                _total_count - Dec(int(_iterator)))
+    return _successive_multiplication * _group_size
+
+
+def calculate_group_size(_total_count, _infect_rate, _minimum, _maximum):
+    _middle = Dec(_minimum + _maximum) / Dec(2)
+    _middle_middle = Dec(_minimum + _middle) / Dec(2)
+    _middle_expectation = _calculate_expectation(_total_count, _infect_rate, _middle)
+    _middle_middle_expectation = _calculate_expectation(_total_count, _infect_rate, _middle_middle)
+    if np.abs(_middle - _middle_middle) < 0.001:
+        return _middle, _middle_expectation
+    if _middle_expectation > _middle_middle_expectation:
+        _result = calculate_group_size(_total_count, _infect_rate, _middle_middle, _maximum)
+    else:
+        _result = calculate_group_size(_total_count, _infect_rate, _minimum, _middle)
+    return _result
+
+
+if __name__ == "__main__":
+    total_count = 1
+    infect_rate = Dec('0.05')
+    if total_count > 10000:
+        check_limit = Dec(10000)
+    else:
+        check_limit = Dec(total_count)
+    group_size, negative_expectation = calculate_group_size(total_count, infect_rate, 0, check_limit)
+    print(f"group_size: {group_size}, "
+          f"negative_expectation: {negative_expectation}, "
+          f"negative_rate: {negative_expectation / group_size}, ")

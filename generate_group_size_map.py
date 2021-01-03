@@ -1,8 +1,9 @@
+import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 import pandas as pd
 
-from calculate_group_size import *
+from mpl_toolkits.mplot3d import Axes3D
+from calculate_group_size import calculate_group_size
 
 if __name__ == "__main__":
     total_count = 100
@@ -24,13 +25,15 @@ if __name__ == "__main__":
 
     for temp_total_count in total_count_list:
         temp_infect_rate_object = {'temp_total_count': temp_total_count}
-        if temp_total_count < limit_count:
-            previous_group_size = temp_total_count
-        else:
-            previous_group_size = limit_count
         for temp_infect_rate in infect_rate_list[1:]:
-            previous_group_size = calculate_group_size(temp_total_count, temp_infect_rate, previous_group_size)[0]
-            temp_infect_rate_object[temp_infect_rate] = previous_group_size
+            if temp_total_count > 10000:
+                temp_check_limit = 10000
+            else:
+                temp_check_limit = temp_total_count
+            temp_infect_rate_object[temp_infect_rate] = calculate_group_size(temp_total_count, temp_infect_rate, 0, temp_check_limit)[0]
+            print(f'When temp_total_count={temp_total_count}, '
+                  f'temp_infect_rate={temp_infect_rate}, '
+                  f'group_size={temp_infect_rate_object[temp_infect_rate]}')
         group_size_list.append(temp_infect_rate_object)
     data_frame = pd.DataFrame(group_size_list, columns=infect_rate_list)
     data_frame.to_csv('group_size.csv', index=False)
