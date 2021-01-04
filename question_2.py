@@ -1,6 +1,11 @@
-from decimal import Decimal as Dec
+import pandas as pd
 
+from decimal import Decimal as Dec
 from calculate_group_size import calculate_group_size
+
+header_list = ["Total population", "Next population", "Next infection rate", "Negative expectation", "Positive groups", "Accumulated positive groups",
+               "Check counts"]
+output_list = []
 
 
 def check_disease(_total_population, _infection_rate, _previous_group_size, _positive_group_cumulated,
@@ -19,6 +24,13 @@ def check_disease(_total_population, _infection_rate, _previous_group_size, _pos
             _negative_expect / Dec(_next_population)))
     _check_counts = (_total_population / _next_population * (Dec(1) + _negative_expect / _next_population)) * _positive_group_cumulated
     _positive_group_cumulated *= _positive_group_count
+    output_list.append({"Total population": round(_total_population),
+                        "Next population": round(_next_population),
+                        "Next infection rate": _next_infection_rate,
+                        "Negative expectation": _negative_expect,
+                        "Positive groups": round(_positive_group_count),
+                        "Accumulated positive groups": round(_positive_group_cumulated),
+                        "Check counts": round(_check_counts)})
     print(f"_total_population={_total_population}, "
           f"_next_population={_next_population}, "
           f"_negative_expect={_negative_expect}, "
@@ -30,16 +42,21 @@ def check_disease(_total_population, _infection_rate, _previous_group_size, _pos
 
 
 if __name__ == "__main__":
-    total_population = Dec(10000000)
-    infection_rate = Dec('0.0045')
-    false_negative_rate = Dec('0.002')
-    false_positive_rate = Dec('0.002')
-    recessive_rate = Dec('0.003')
+    inputs = input("Please enter <Total population> <Infection rate> <False negative rate> <False positive rate> <Recessive rate>").split(" ")
+    if len(inputs) != 5:
+        print("Invalid arguments.")
+        exit(1)
+    total_population = Dec(inputs[0])
+    infection_rate = Dec(inputs[1])
+    false_negative_rate = Dec(inputs[2])
+    false_positive_rate = Dec(inputs[3])
+    recessive_rate = Dec(inputs[4])
     check_counts = Dec(0)
     next_population = total_population
     next_infection_rate = infection_rate
     positive_group_cumulated = Dec(1)
     first_time = True
+    file_name = f'Q2_{total_population}_{infection_rate}_{false_negative_rate}_{false_positive_rate}_{recessive_rate}.csv'
     while True:
         last_time = False
         if next_population < 1:
@@ -60,3 +77,5 @@ if __name__ == "__main__":
         if last_time is True and next_population < 1:
             print(f"check_counts:{int(check_counts) + 1}")
             break
+    data_frame = pd.DataFrame(output_list, columns=header_list)
+    data_frame.to_csv(file_name, index=True)
